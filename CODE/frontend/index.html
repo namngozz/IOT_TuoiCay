@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 IoT Smart Garden</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body { background: #f5f7fa; font-family: 'Segoe UI', sans-serif; }
+.card { border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); margin-bottom: 20px; text-align:center; padding:20px;}
+.sensor-value { font-size: 2rem; font-weight: bold; margin-top:10px; }
+.gradient-card { background: linear-gradient(135deg,#6dd5ed,#2193b0); color:#fff; }
+.gradient-card2 { background: linear-gradient(135deg,#f093fb,#f5576c); color:#fff; }
+.gradient-card3 { background: linear-gradient(135deg,#43e97b,#38f9d7); color:#fff; }
+</style>
+</head>
+<body> 
+<div class="container py-4">
+<h1 class="fw-bold text-center mb-4">🌱 IoT Smart Garden Dashboard</h1>
+  
+<!-- Nút truy cập trực tiếp vào OTA -->
+<div class="text-center mb-4">
+  <a href="http://192.168.1.50/update" target="_blank" class="btn btn-lg btn-success shadow-sm px-5">
+    Cập nhật Firmware ESP32 (OTA)
+  </a>
+</div>
+
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card gradient-card"><div>🌿 Độ ẩm đất</div><div class="sensor-value" id="soil">- %</div></div></div>
+  <div class="col-md-4"><div class="card gradient-card2"><div>🌤 Nhiệt độ</div><div class="sensor-value" id="temp">- °C</div></div></div>
+  <div class="col-md-4"><div class="card gradient-card3"><div>💧 Độ ẩm KK</div><div class="sensor-value" id="hum">- %</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card"><div>Chế độ hiện tại</div><div class="sensor-value" id="currentMode">-</div></div></div>
+  <div class="col-md-3"><div class="card"><div>Bơm hiện tại</div><div class="sensor-value" id="pumpStatusText">-</div></div></div>
+  <div class="col-md-3"><div class="card"><div>📉 Ngưỡng Min</div><div class="sensor-value" id="min_val">- %</div></div></div>
+  <div class="col-md-3"><div class="card"><div>📈 Ngưỡng Max</div><div class="sensor-value" id="max_val">- %</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card"><div>🚿 Dòng chảy</div><div class="sensor-value" id="flow">-</div></div></div>
+  <div class="col-md-3"><div class="card"><div>⏱️ Thời gian tưới tiếp theo</div><div class="sensor-value" id="next_time">- phút</div></div></div>
+</div>
+
+<div class="row g-3 mt-3">
+  <div class="col-md-4">
+    <div class="card p-3 text-center">
+      <div>💡 Chọn chế độ</div>
+      <select id="modeSelect" class="form-select mt-2">
+        <option value="AUTO">AUTO</option>
+        <option value="MANUAL">MANUAL</option>
+        <option value="SCHEDULE">SCHEDULE</option>
+        <option value="SLEEP">SLEEP</option>
+      </select>
+      <button class="btn btn-primary mt-2" id="modeApply">Gửi lệnh</button>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3 text-center">
+      <div>🚰 Bật/Tắt bơm</div>
+      <div class="form-check form-switch d-flex justify-content-center mt-3">
+        <input class="form-check-input" type="checkbox" id="pumpSwitch" style="transform: scale(1.8); cursor:pointer;">
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3 text-center">
+      <div>⚡ Công suất bơm (%)</div>
+      <input type="range" class="form-range" min="0" max="100" step="1" id="pumpPower">
+      <span id="pumpPowerLabel">36%</span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-3">
+  <div class="col-md-12">
+    <div class="card p-3">
+      <h5>Lịch tưới</h5>
+      <div id="scheduleList" class="mb-2"></div>
+      <div class="input-group mb-2">
+        <input type="time" id="scheduleTime" class="form-control">
+        <button class="btn btn-primary" id="addScheduleBtn">Thêm lịch</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-3">
+  <div class="col-md-12">
+    <div class="card p-3">
+      <h5>Lệnh chờ ESP thực hiện</h5>
+      <div id="commandList">-</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="row g-3 mt-3">
+  <div class="col-md-12">
+    <div class="card p-3">
+      <h5>📜 Lịch sử điều khiển</h5>
+      <table class="table table-striped table-bordered text-center align-middle" id="historyTable">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Chế độ</th>
+            <th>Bơm</th>
+            <th>Công suất</th>
+            <th>Lịch tưới</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="5">Đang tải...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<script src="script.js"></script>
+</body>
+</html>
